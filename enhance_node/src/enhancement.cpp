@@ -1,4 +1,7 @@
 #include "enhancement.h"
+///////////////////////////////////////////////////
+#include "enhancer/enhancer.h"
+////////////////////////////////////////
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
@@ -75,6 +78,7 @@ void publishImage(const cv::Mat &image, const std_msgs::Header &header, ros::Pub
 }
 
 cv::Mat processImage(cv::Mat image) {
+    /****************************************** 
     //histogram 
     cv::Mat dstHist;
     int dims = 1;
@@ -141,6 +145,8 @@ cv::Mat processImage(cv::Mat image) {
     //cv::imshow("一维直方图", dstImage);
 
     return res;
+    **********************************/
+    return adaptive_correction_mono(image);
 }
 
 void sync_process(){
