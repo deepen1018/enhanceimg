@@ -76,7 +76,7 @@ void publishImage(const cv::Mat &image, const std_msgs::Header &header, ros::Pub
     out_msg.image = image;
     pub.publish(out_msg.toImageMsg());
 }
-
+//std::pair<cv::Mat, cv::Mat> processImages(cv::Mat image0, cv::Mat image1) {
 cv::Mat processImage(cv::Mat image) {
     /****************************************** 
     //histogram 
@@ -146,7 +146,38 @@ cv::Mat processImage(cv::Mat image) {
 
     return res;
     **********************************/
-    return adaptive_correction_mono(image);
+    //return tplthe_enhancement(image);
+    
+    return adaptive_correction_mono_new(image);
+    //return adaptive_correction_stereo(image0, image1);
+    //return clahe_enhancement(image);
+    
+}
+void showHistogram(const cv::Mat& image, const std::string& windowName) {
+    // Calculate histogram
+    int histSize = 256;    // bin size
+    float range[] = { 0, 256 };
+    const float* histRange = { range };
+    cv::Mat hist;
+
+    cv::calcHist(&image, 1, 0, cv::Mat(), hist, 1, &histSize, &histRange);
+
+    // Normalize the histogram to fit the image height
+    int hist_w = 512; int hist_h = 400;
+    int bin_w = cvRound((double) hist_w / histSize);
+    cv::Mat histImage(hist_h, hist_w, CV_8UC1, cv::Scalar(0));
+
+    cv::normalize(hist, hist, 0, histImage.rows, cv::NORM_MINMAX);
+
+    // Draw the histogram
+    for(int i = 1; i < histSize; i++) {
+        line(histImage, cv::Point(bin_w*(i-1), hist_h - cvRound(hist.at<float>(i-1))),
+             cv::Point(bin_w*(i), hist_h - cvRound(hist.at<float>(i))),
+             cv::Scalar(255), 2, 8, 0);
+    }
+
+    // Display the histogram with a specific window name
+    cv::imshow(windowName, histImage);
 }
 
 void sync_process(){
@@ -180,22 +211,28 @@ void sync_process(){
                     img0_buf.pop();
                     image1 = getImageFromMsg(img1_buf.front());
                     img1_buf.pop();
-
-                    // 對 image0 進行處理
+                    showHistogram(image0, "Original Image 0 Histogram");
+                    // // 對 image0 進行處理
                     cv::Mat res0 = processImage(image0);
 
-                    // 對 image1 進行處理
+                    // // 對 image1 進行處理
                     cv::Mat res1 = processImage(image1);
+                    // auto results = processImages(image0, image1);
+                    // cv::Mat res0 = results.first;
+                    // cv::Mat res1 = results.second;
 
                     if(!image0.empty()){
-                        //cv::imshow("image0",image0);
+                        cv::imshow("image0",image0);
                         cv::imshow("correction_new_image0",res0);
                         publishImage(res0, header, pub_img0_processed);
                     }
                     if(!image1.empty()){
                         //cv::imshow("image1",image1);
-                        cv::imshow("correction_new_image1",res1);
+                        //cv::imshow("correction_new_image1",res1);
                         publishImage(res1, header, pub_img1_processed);
+                        // Display the histogram of res1
+                        showHistogram(res0, "Processed Image 0 Histogram");
+
                     }
                 }
             }
